@@ -197,12 +197,15 @@ fbEvenStipple (FbBits	*dst,
 	    n = nmiddle;
 	    if (!and)
 		while (n--)
-		    *dst++ = xor;
+		{
+		    FbDoWrite32 (*dst, xor, dst);
+		    dst++;
+		}
 	    else
 	    {
 		while (n--)
 		{
-		    *dst = FbDoRRop (*dst, and, xor);
+		    FbDoRRop (*dst, and, xor, dst);
 		    dst++;
 		}
 	    }

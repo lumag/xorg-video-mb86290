@@ -26,6 +26,12 @@
 #ifndef _FBROP_H_
 #define _FBROP_H_
 
+#include <asm/byteorder.h>
+#define MB86290_32_SWAP(c) (__cpu_to_le16((__u16)(c)) | (__cpu_to_le16(((__u32)(c)) >> 16) << 16))
+#define MB86290_16_SWAP(c) (__cpu_to_le16((__u16)(c)))
+extern unsigned long MB86290_fbstart;
+extern unsigned long MB86290_fbend;
+
 typedef struct _mergeRopBits {
     FbBits   ca1, cx1, ca2, cx2;
 } FbMergeRopRec, *FbMergeRopPtr;
@@ -51,28 +57,197 @@ extern const FbMergeRopRec	FbMergeRopBits[16];
 
 /* AND has higher precedence than XOR */
 
-#define FbDoMergeRop(src, dst) \
-    (((dst) & (((src) & _ca1) ^ _cx1)) ^ (((src) & _ca2) ^ _cx2))
+#define FbDoMergeRop(src, dst, src_adr, dst_adr) { \
+    if ( ((unsigned long)(src_adr) >= MB86290_fbstart) && ((unsigned long)(src_adr) <= MB86290_fbend) && \
+         (((unsigned long)(dst_adr) < MB86290_fbstart) || ((unsigned long)(dst_adr) > MB86290_fbend)) ) \
+    { \
+	FbBits __tmp0 = MB86290_32_SWAP(src); \
+	dst = (((dst) & (((__tmp0) & _ca1) ^ _cx1)) ^ (((__tmp0) & _ca2) ^ _cx2)); \
+    } \
+    else if ( ((unsigned long)(dst_adr) >= MB86290_fbstart) && ((unsigned long)(dst_adr) <= MB86290_fbend) && \
+              (((unsigned long)(src_adr) < MB86290_fbstart) || ((unsigned long)(src_adr) > MB86290_fbend)) ) \
+    { \
+	FbBits __tmp0 = MB86290_32_SWAP(dst); \
+	FbBits __tmp1 = (((__tmp0) & (((src) & _ca1) ^ _cx1)) ^ (((src) & _ca2) ^ _cx2)); \
+	dst = MB86290_32_SWAP(__tmp1); \
+    } \
+    else if ( ((unsigned long)(src_adr) >= MB86290_fbstart) && ((unsigned long)(src_adr) <= MB86290_fbend) && \
+              (((unsigned long)(dst_adr) >= MB86290_fbstart) || ((unsigned long)(dst_adr) <= MB86290_fbend)) ) \
+    { \
+	FbBits __tmp0 = MB86290_32_SWAP(dst); \
+	FbBits __tmp1 = MB86290_32_SWAP(src); \
+	FbBits __tmp2 = (((__tmp0) & (((__tmp1) & _ca1) ^ _cx1)) ^ (((__tmp1) & _ca2) ^ _cx2)); \
+	dst = MB86290_32_SWAP(__tmp2); \
+    } \
+    else \
+    { \
+	dst = (((dst) & (((src) & _ca1) ^ _cx1)) ^ (((src) & _ca2) ^ _cx2)); \
+    } \
+}
 
-#define FbDoDestInvarientMergeRop(src)	(((src) & _ca2) ^ _cx2)
+#define FbDoDestInvarientMergeRop(src, dst, src_adr, dst_adr) { \
+    if ( ((unsigned long)(src_adr) >= MB86290_fbstart) && ((unsigned long)(src_adr) <= MB86290_fbend) && \
+         (((unsigned long)(dst_adr) < MB86290_fbstart) || ((unsigned long)(dst_adr) > MB86290_fbend)) ) \
+    { \
+	FbBits __tmp0 = MB86290_32_SWAP(src); \
+	dst = (((__tmp0) & _ca2) ^ _cx2); \
+    } \
+    else if ( ((unsigned long)(dst_adr) >= MB86290_fbstart) && ((unsigned long)(dst_adr) <= MB86290_fbend) && \
+              (((unsigned long)(src_adr) < MB86290_fbstart) || ((unsigned long)(src_adr) > MB86290_fbend)) ) \
+    { \
+	FbBits __tmp0 = (((src) & _ca2) ^ _cx2); \
+	dst = MB86290_32_SWAP(__tmp0); \
+    } \
+    else if ( ((unsigned long)(src_adr) >= MB86290_fbstart) && ((unsigned long)(src_adr) <= MB86290_fbend) && \
+              (((unsigned long)(dst_adr) >= MB86290_fbstart) || ((unsigned long)(dst_adr) <= MB86290_fbend)) ) \
+    { \
+	FbBits __tmp0 = MB86290_32_SWAP(src); \
+	FbBits __tmp1 = (((__tmp0) & _ca2) ^ _cx2); \
+	dst = MB86290_32_SWAP(__tmp1); \
+    } \
+    else \
+    { \
+	dst = (((src) & _ca2) ^ _cx2); \
+    } \
+}
 
-#define FbDoMaskMergeRop(src, dst, mask) \
-    (((dst) & ((((src) & _ca1) ^ _cx1) | ~(mask))) ^ ((((src) & _ca2) ^ _cx2) & (mask)))
+#define FbDoMaskMergeRop(src, dst, mask, src_adr, dst_adr) { \
+    if ( ((unsigned long)(src_adr) >= MB86290_fbstart) && ((unsigned long)(src_adr) <= MB86290_fbend) && \
+         (((unsigned long)(dst_adr) < MB86290_fbstart) || ((unsigned long)(dst_adr) > MB86290_fbend)) ) \
+    { \
+	FbBits __tmp0 = MB86290_32_SWAP(src); \
+	dst = (((dst) & ((((__tmp0) & _ca1) ^ _cx1) | ~(mask))) ^ ((((__tmp0) & _ca2) ^ _cx2) & (mask))); \
+    } \
+    else if ( ((unsigned long)(dst_adr) >= MB86290_fbstart) && ((unsigned long)(dst_adr) <= MB86290_fbend) && \
+              (((unsigned long)(src_adr) < MB86290_fbstart) || ((unsigned long)(src_adr) > MB86290_fbend)) ) \
+    { \
+	FbBits __tmp0 = MB86290_32_SWAP(dst); \
+	FbBits __tmp1 = (((__tmp0) & ((((src) & _ca1) ^ _cx1) | ~(mask))) ^ ((((src) & _ca2) ^ _cx2) & (mask))); \
+	dst = MB86290_32_SWAP(__tmp1); \
+    } \
+    else if ( ((unsigned long)(src_adr) >= MB86290_fbstart) && ((unsigned long)(src_adr) <= MB86290_fbend) && \
+              (((unsigned long)(dst_adr) >= MB86290_fbstart) || ((unsigned long)(dst_adr) <= MB86290_fbend)) ) \
+    { \
+	FbBits __tmp0 = MB86290_32_SWAP(dst); \
+	FbBits __tmp1 = MB86290_32_SWAP(src); \
+	FbBits __tmp2 = (((__tmp0) & ((((__tmp1) & _ca1) ^ _cx1) | ~(mask))) ^ ((((__tmp1) & _ca2) ^ _cx2) & (mask))); \
+	dst = MB86290_32_SWAP(__tmp2); \
+    } \
+    else \
+    { \
+	dst = (((dst) & ((((src) & _ca1) ^ _cx1) | ~(mask))) ^ ((((src) & _ca2) ^ _cx2) & (mask))); \
+    } \
+}
 
+#ifndef FBNOPIXADDR
 #define FbDoLeftMaskByteMergeRop(dst, src, lb, l) { \
-    FbBits  __xor = ((src) & _ca2) ^ _cx2; \
+    FbBits __xor = ((src) & _ca2) ^ _cx2; \
     FbDoLeftMaskByteRRop(dst,lb,l,((src) & _ca1) ^ _cx1,__xor); \
 }
+#else
+#define FbDoLeftMaskByteMergeRop(dst, src, lb, l, dst_adr, src_adr) \
+    FbDoMaskMergeRop(src, *dst, l, src_adr, dst_adr)
+#endif
 
+#ifndef FBNOPIXADDR
 #define FbDoRightMaskByteMergeRop(dst, src, rb, r) { \
-    FbBits  __xor = ((src) & _ca2) ^ _cx2; \
+    FbBits __xor = ((src) & _ca2) ^ _cx2; \
     FbDoRightMaskByteRRop(dst,rb,r,((src) & _ca1) ^ _cx1,__xor); \
 }
+#else
+#define FbDoRightMaskByteMergeRop(dst, src, rb, r, dst_adr, src_adr) \
+    FbDoMaskMergeRop(src, *dst, r, src_adr, dst_adr)
+#endif
 
-#define FbDoRRop(dst, and, xor)	(((dst) & (and)) ^ (xor))
+#define FbDoRRop_Origin(dst, and, xor) \
+    (((dst) & (and)) ^ (xor))
 
-#define FbDoMaskRRop(dst, and, xor, mask) \
+#define FbDoRRop(dst, and, xor, dst_adr) { \
+    if (((unsigned long)(dst_adr) >= MB86290_fbstart) && \
+	((unsigned long)(dst_adr) <= MB86290_fbend)) \
+    { \
+	FbBits __tmp0 = MB86290_32_SWAP(dst); \
+	FbBits __tmp1 = (((__tmp0) & (and)) ^ (xor)); \
+	dst = MB86290_32_SWAP(__tmp1); \
+    } \
+    else \
+    { \
+	dst = (((dst) & (and)) ^ (xor)); \
+    } \
+}
+
+#define FbDoMaskRRop_Origin(dst, and, xor, mask) \
     (((dst) & ((and) | ~(mask))) ^ (xor & mask))
+
+#define FbDoMaskRRop(dst, and, xor, mask, dst_adr) { \
+    if (((unsigned long)(dst_adr) >= MB86290_fbstart) && \
+	((unsigned long)(dst_adr) <= MB86290_fbend)) \
+    { \
+	FbBits __tmp0 = MB86290_32_SWAP(dst); \
+	FbBits __tmp1 = (((__tmp0) & ((and) | ~(mask))) ^ (xor & mask)); \
+	dst = MB86290_32_SWAP(__tmp1); \
+    } \
+    else \
+    { \
+	dst = (((dst) & ((and) | ~(mask))) ^ (xor & mask)); \
+    } \
+}
+
+#if 0
+#define FbDoWrite16(dst, src, dst_adr, src_adr) { \
+    if ( (((unsigned long)(src_adr) >= MB86290_fbstart) && ((unsigned long)(src_adr) <= MB86290_fbend) && \
+         (((unsigned long)(dst_adr) < MB86290_fbstart) || ((unsigned long)(dst_adr) > MB86290_fbend))) || \
+         (((unsigned long)(dst_adr) >= MB86290_fbstart) && ((unsigned long)(dst_adr) <= MB86290_fbend) && \
+         (((unsigned long)(src_adr) < MB86290_fbstart) || ((unsigned long)(src_adr) > MB86290_fbend))) ) \
+    { \
+	dst = MB86290_16_SWAP(src); \
+    } \
+    else \
+    { \
+	dst = src; \
+    } \
+}
+#endif
+
+#define FbDoWrite16(dst, src, adr) { \
+    if (((unsigned long)(adr) >= MB86290_fbstart) && \
+	((unsigned long)(adr) <= MB86290_fbend)) \
+    { \
+	dst = MB86290_16_SWAP(src); \
+    } \
+    else \
+    { \
+	dst = src; \
+    } \
+}
+
+#if 0
+#define FbDoWrite32(dst, src, dst_adr, src_adr) { \
+    if ( (((unsigned long)(src_adr) >= MB86290_fbstart) && ((unsigned long)(src_adr) <= MB86290_fbend) && \
+         (((unsigned long)(dst_adr) < MB86290_fbstart) || ((unsigned long)(dst_adr) > MB86290_fbend))) || \
+         (((unsigned long)(dst_adr) >= MB86290_fbstart) && ((unsigned long)(dst_adr) <= MB86290_fbend) && \
+         (((unsigned long)(src_adr) < MB86290_fbstart) || ((unsigned long)(src_adr) > MB86290_fbend))) ) \
+    { \
+	dst = MB86290_32_SWAP(src); \
+    } \
+    else \
+    { \
+	dst = src; \
+    } \
+}
+#endif
+
+#define FbDoWrite32(dst, src, adr) { \
+    if (((unsigned long)(adr) >= MB86290_fbstart) && \
+	((unsigned long)(adr) <= MB86290_fbend)) \
+    { \
+	dst = MB86290_32_SWAP(src); \
+    } \
+    else \
+    { \
+	dst = src; \
+    } \
+}
 
 /*
  * Take a single bit (0 or 1) and generate a full mask
@@ -107,12 +282,34 @@ extern const FbBits	fbStipple2Bits[4];
 extern const FbBits	fbStipple1Bits[2];
 extern const FbBits	*const fbStippleTable[];
 
-#define FbStippleRRop(dst, b, fa, fx, ba, bx) \
-    (FbDoRRop(dst, fa, fx) & b) | (FbDoRRop(dst, ba, bx) & ~b)
+#define FbStippleRRop(dst, b, fa, fx, ba, bx, dst_adr) { \
+    if (((unsigned long)(dst_adr) >= MB86290_fbstart) && \
+	((unsigned long)(dst_adr) <= MB86290_fbend)) \
+    { \
+	FbBits __tmp0 = MB86290_32_SWAP(dst); \
+	FbBits __tmp1 = (FbDoRRop_Origin(__tmp0, fa, fx) & b) | (FbDoRRop_Origin(__tmp0, ba, bx) & ~b); \
+	dst = MB86290_32_SWAP(__tmp1); \
+    } \
+    else \
+    { \
+	dst = (FbDoRRop_Origin(dst, fa, fx) & b) | (FbDoRRop_Origin(dst, ba, bx) & ~b); \
+    } \
+}
 
-#define FbStippleRRopMask(dst, b, fa, fx, ba, bx, m) \
-    (FbDoMaskRRop(dst, fa, fx, m) & (b)) | (FbDoMaskRRop(dst, ba, bx, m) & ~(b))
-						       
+#define FbStippleRRopMask(dst, b, fa, fx, ba, bx, m, dst_adr) { \
+    if (((unsigned long)(dst_adr) >= MB86290_fbstart) && \
+	((unsigned long)(dst_adr) <= MB86290_fbend)) \
+    { \
+	FbBits __tmp0 = MB86290_32_SWAP(dst); \
+	FbBits __tmp1 = (FbDoMaskRRop_Origin(__tmp0, fa, fx, m) & (b)) | (FbDoMaskRRop_Origin(__tmp0, ba, bx, m) & ~(b)); \
+	dst = MB86290_32_SWAP(__tmp1); \
+    } \
+    else \
+    { \
+	dst = (FbDoMaskRRop_Origin(dst, fa, fx, m) & (b)) | (FbDoMaskRRop_Origin(dst, ba, bx, m) & ~(b)); \
+    } \
+}
+
 #define FbDoLeftMaskByteStippleRRop(dst, b, fa, fx, ba, bx, lb, l) { \
     FbBits  __xor = ((fx) & (b)) | ((bx) & ~(b)); \
     FbDoLeftMaskByteRRop(dst, lb, l, ((fa) & (b)) | ((ba) & ~(b)), __xor); \

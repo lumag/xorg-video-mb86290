@@ -329,7 +329,10 @@ fbBltOne (FbStip    *src,
 			else
 #endif
 			    mask = fbBits[FbLeftStipBits(bits,pixelsPerDst)];
-			*dst = FbOpaqueStipple (mask, fgxor, bgxor);
+			{
+			    FbBits __tmp = FbOpaqueStipple (mask, fgxor, bgxor);
+			    FbDoWrite32 (*dst, __tmp, dst);
+			}
 			dst++;
 			bits = FbStipLeft(bits, pixelsPerDst);
 		    }
@@ -359,8 +362,8 @@ fbBltOne (FbStip    *src,
 			    if (left || !transparent)
 			    {
 				mask = fbBits[left];
-				*dst = FbStippleRRop (*dst, mask,
-						      fgand, fgxor, bgand, bgxor);
+				FbStippleRRop (*dst, mask,
+					      fgand, fgxor, bgand, bgxor, dst);
 			    }
 			    dst++;
 			    bits = FbStipLeft(bits, pixelsPerDst);
@@ -617,10 +620,15 @@ fbBltOne24 (FbStip	*srcLine,
 	    if (leftMask)
 	    {
 		mask = fbStipple24Bits[rot >> 3][stip];
-		*dst = (*dst & ~leftMask) | (FbOpaqueStipple (mask,
-							      FbRot24(fgxor, rot),
-							      FbRot24(bgxor, rot))
-					     & leftMask);
+		{
+		    FbBits __tmp0, __tmp1;
+		    FbDoWrite32 (__tmp0, *dst, dst);
+		    __tmp1 = (__tmp0 & ~leftMask) | (FbOpaqueStipple (mask,
+			      FbRot24(fgxor, rot),
+			      FbRot24(bgxor, rot))
+			     & leftMask);
+		    FbDoWrite32 (*dst, __tmp1, dst);
+		}
 		dst++;
 		fbNextStipBits(rot,stip);
 	    }
@@ -628,19 +636,27 @@ fbBltOne24 (FbStip	*srcLine,
 	    while (nl--)
 	    {
 		mask = fbStipple24Bits[rot>>3][stip];
-		*dst = FbOpaqueStipple (mask, 
+		{
+		    FbBits __tmp = FbOpaqueStipple (mask, 
 					FbRot24(fgxor, rot),
 					FbRot24(bgxor, rot));
+		    FbDoWrite32 (*dst, __tmp, dst);
+		}
 		dst++;
 		fbNextStipBits(rot,stip);
 	    }
 	    if (rightMask)
 	    {
 		mask = fbStipple24Bits[rot >> 3][stip];
-		*dst = (*dst & ~rightMask) | (FbOpaqueStipple (mask,
-							       FbRot24(fgxor, rot),
-							       FbRot24(bgxor, rot))
-					      & rightMask);
+		{
+		    FbBits __tmp0, __tmp1;
+		    FbDoWrite32 (__tmp0, *dst, dst);
+		    __tmp1 = (__tmp0 & ~rightMask) | (FbOpaqueStipple (mask,
+			      FbRot24(fgxor, rot),
+			      FbRot24(bgxor, rot))
+			     & rightMask);
+		    FbDoWrite32 (*dst, __tmp1, dst);
+		}
 	    }
 	    dst += dstStride;
 	    src += srcStride;
@@ -660,7 +676,12 @@ fbBltOne24 (FbStip	*srcLine,
 		if (stip)
 		{
 		    mask = fbStipple24Bits[rot >> 3][stip] & leftMask;
-		    *dst = (*dst & ~mask) | (FbRot24(fgxor, rot) & mask);
+		    {
+			FbBits __tmp0, __tmp1;
+			FbDoWrite32 (__tmp0, *dst, dst);
+			__tmp1 = (__tmp0 & ~mask) | (FbRot24(fgxor, rot) & mask);
+			FbDoWrite32 (*dst, __tmp1, dst);
+		    }
 		}
 		dst++;
 		fbNextStipBits (rot, stip);
@@ -671,7 +692,12 @@ fbBltOne24 (FbStip	*srcLine,
 		if (stip)
 		{
 		    mask = fbStipple24Bits[rot>>3][stip];
-		    *dst = (*dst & ~mask) | (FbRot24(fgxor,rot) & mask);
+		    {
+			FbBits __tmp0, __tmp1;
+			FbDoWrite32 (__tmp0, *dst, dst);
+			__tmp1 = (__tmp0 & ~mask) | (FbRot24(fgxor,rot) & mask);
+			FbDoWrite32 (*dst, __tmp1, dst);
+		    }
 		}
 		dst++;
 		fbNextStipBits (rot, stip);
@@ -681,7 +707,12 @@ fbBltOne24 (FbStip	*srcLine,
 		if (stip)
 		{
 		    mask = fbStipple24Bits[rot >> 3][stip] & rightMask;
-		    *dst = (*dst & ~mask) | (FbRot24(fgxor, rot) & mask);
+		    {
+			FbBits __tmp0, __tmp1;
+			FbDoWrite32 (__tmp0, *dst, dst);
+			FbBits __tmp1 = (__tmp0 & ~mask) | (FbRot24(fgxor, rot) & mask);
+			FbDoWrite32 (*dst, __tmp1, dst);
+		    }
 		}
 	    }
 	    dst += dstStride;
@@ -698,12 +729,12 @@ fbBltOne24 (FbStip	*srcLine,
 	    if (leftMask)
 	    {
 		mask = fbStipple24Bits[rot >> 3][stip];
-		*dst = FbStippleRRopMask (*dst, mask,
-					  FbRot24(fgand, rot),
-					  FbRot24(fgxor, rot),
-					  FbRot24(bgand, rot),
-					  FbRot24(bgxor, rot),
-					  leftMask);
+		FbStippleRRopMask (*dst, mask,
+				  FbRot24(fgand, rot),
+				  FbRot24(fgxor, rot),
+				  FbRot24(bgand, rot),
+				  FbRot24(bgxor, rot),
+				  leftMask, dst);
 		dst++;
 		fbNextStipBits(rot,stip);
 	    }
@@ -711,23 +742,24 @@ fbBltOne24 (FbStip	*srcLine,
 	    while (nl--)
 	    {
 		mask = fbStipple24Bits[rot >> 3][stip];
-		*dst = FbStippleRRop (*dst, mask,
-				      FbRot24(fgand, rot),
-				      FbRot24(fgxor, rot),
-				      FbRot24(bgand, rot),
-				      FbRot24(bgxor, rot));
+		FbStippleRRop (*dst, mask,
+			      FbRot24(fgand, rot),
+			      FbRot24(fgxor, rot),
+			      FbRot24(bgand, rot),
+			      FbRot24(bgxor, rot),
+			      dst);
 		dst++;
 		fbNextStipBits(rot,stip);
 	    }
 	    if (rightMask)
 	    {
 		mask = fbStipple24Bits[rot >> 3][stip];
-		*dst = FbStippleRRopMask (*dst, mask,
-					  FbRot24(fgand, rot),
-					  FbRot24(fgxor, rot),
-					  FbRot24(bgand, rot),
-					  FbRot24(bgxor, rot),
-					  rightMask);
+		FbStippleRRopMask (*dst, mask,
+				  FbRot24(fgand, rot),
+				  FbRot24(fgxor, rot),
+				  FbRot24(bgand, rot),
+				  FbRot24(bgxor, rot),
+				  rightMask, dst);
 	    }
 	    dst += dstStride;
 	}
@@ -839,9 +871,9 @@ fbBltPlane (FbBits	    *src,
 	    }
 	    if (!dstMask)
 	    {
-		*d = FbStippleRRopMask(*d, dstBits,
+		FbStippleRRopMask (*d, dstBits,
 				       fgand, fgxor, bgand, bgxor,
-				       dstUnion);
+				       dstUnion, d);
 		d++;
 		dstMask = FbStipMask(0,1);
 		dstUnion = 0;
@@ -857,9 +889,9 @@ fbBltPlane (FbBits	    *src,
 	    dstMask = FbStipRight(dstMask,1);
 	}
 	if (dstUnion)
-	    *d = FbStippleRRopMask(*d,dstBits,
+	    FbStippleRRopMask (*d, dstBits,
 				   fgand, fgxor, bgand, bgxor,
-				   dstUnion);
+				   dstUnion, d);
     }
 }
 

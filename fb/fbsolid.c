@@ -67,11 +67,14 @@ fbSolid (FbBits	    *dst,
 	n = nmiddle;
 	if (!and)
 	    while (n--)
-		*dst++ = xor;
+	    {
+		FbDoWrite32 (*dst, xor, dst);
+		dst++;
+	    }
 	else
 	    while (n--)
 	    {
-		*dst = FbDoRRop (*dst, and, xor);
+		FbDoRRop (*dst, and, xor, dst);
 		dst++;
 	    }
 	if (endmask)
@@ -157,7 +160,7 @@ fbSolid24 (FbBits   *dst,
     {
 	if (startmask)
 	{
-	    *dst = FbDoMaskRRop(*dst, andS, xorS, startmask);
+	    FbDoMaskRRop (*dst, andS, xorS, startmask, dst);
 	    dst++;
 	}
 	n = nmiddle;
@@ -165,18 +168,23 @@ fbSolid24 (FbBits   *dst,
 	{
 	    while (n >= 3)
 	    {
-		*dst++ = xor0;
-		*dst++ = xor1;
-		*dst++ = xor2;
+		FbDoWrite32 (*dst, xor0, dst);
+		dst++;
+		FbDoWrite32 (*dst, xor1, dst);
+		dst++;
+		FbDoWrite32 (*dst, xor2, dst);
+		dst++;
 		n -= 3;
 	    }
 	    if (n)
 	    {
-		*dst++ = xor0;
+		FbDoWrite32 (*dst, xor0, dst);
+		dst++;
 		n--;
 		if (n)
 		{
-		    *dst++ = xor1;
+		    FbDoWrite32 (*dst, xor1, dst);
+		    dst++;
 		}
 	    }
 	}
@@ -184,28 +192,30 @@ fbSolid24 (FbBits   *dst,
 	{
 	    while (n >= 3)
 	    {
-		*dst = FbDoRRop (*dst, and0, xor0);
+		FbDoRRop (*dst, and0, xor0, dst);
 		dst++;
-		*dst = FbDoRRop (*dst, and1, xor1);
+		FbDoRRop (*dst, and1, xor1, dst);
 		dst++;
-		*dst = FbDoRRop (*dst, and2, xor2);
+		FbDoRRop (*dst, and2, xor2, dst);
 		dst++;
 		n -= 3;
 	    }
 	    if (n)
 	    {
-		*dst = FbDoRRop (*dst, and0, xor0);
+		FbDoRRop (*dst, and0, xor0, dst);
 		dst++;
 		n--;
 		if (n)
 		{
-		    *dst = FbDoRRop (*dst, and1, xor1);
+		    FbDoRRop (*dst, and1, xor1, dst);
 		    dst++;
 		}
 	    }
 	}
 	if (endmask)
-	    *dst = FbDoMaskRRop (*dst, andE, xorE, endmask);
+	{
+	    FbDoMaskRRop (*dst, andE, xorE, endmask, dst);
+	}
 	dst += dstStride;
     }
 }

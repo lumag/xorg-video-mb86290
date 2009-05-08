@@ -101,13 +101,15 @@
 #define BITSMUL	    3
 
 #define FbDoTypeStore(b,t,x,s)	(*((t *) (b)) = (x) >> (s))
-#define FbDoTypeRRop(b,t,a,x,s) (*((t *) (b)) = FbDoRRop(*((t *) (b)),\
-							 (a) >> (s), \
-							 (x) >> (s)))
-#define FbDoTypeMaskRRop(b,t,a,x,m,s) (*((t *) (b)) = FbDoMaskRRop(*((t *) (b)),\
-								   (a) >> (s), \
-								   (x) >> (s), \
-								   (m) >> (s))
+#define FbDoTypeRRop(b,t,a,x,s) (FbDoRRop(*((t *)(b)),\
+					 (a) >> (s), \
+					 (x) >> (s), \
+					 ((t *)(b)) ))
+#define FbDoTypeMaskRRop(b,t,a,x,m,s) (FbDoMaskRRop(*((t *) (b)),\
+						   (a) >> (s), \
+						   (x) >> (s), \
+						   (m) >> (s), \
+						   ((t*)(b)) ))
 #if BITMAP_BIT_ORDER == LSBFirst
 #define BITSSTORE(b,x)	((unsigned long) (b) & 1 ? \
 			 (FbDoTypeStore (b, CARD8, x, 0), \

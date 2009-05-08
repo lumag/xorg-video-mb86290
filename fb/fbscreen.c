@@ -25,6 +25,9 @@
 
 #include "fb.h"
 
+unsigned long MB86290_fbstart;
+unsigned long MB86290_fbend;
+
 Bool
 fbCloseScreen (int index, ScreenPtr pScreen)
 {
@@ -270,6 +273,10 @@ fbScreenInit(ScreenPtr	pScreen,
     if (!fbFinishScreenInit(pScreen, pbits, xsize, ysize, dpix, dpiy, 
 			    width, bpp))
 	return FALSE;
+    
+    MB86290_fbstart = (unsigned long)pbits;
+    MB86290_fbend   = MB86290_fbstart + xsize * ysize * bpp / 8;
+    
     return TRUE;
 }
 

@@ -77,8 +77,7 @@ fbEvenTile (FbBits	*dst,
 	/*
 	 * Pick up bits for this scanline
 	 */
-	bits = *t++;
-	if (t == tileEnd) t = tile;
+	bits = *t;
 	bits = FbRotLeft(bits,rot);
 	and = fbAnd(alu,bits,pm);
 	xor = fbXor(alu,bits,pm);
@@ -91,15 +90,20 @@ fbEvenTile (FbBits	*dst,
 	n = nmiddle;
 	if (!and)
 	    while (n--)
-		*dst++ = xor;
+	    {
+		FbDoWrite32 (*dst, xor, dst);
+		dst++;
+	    }
 	else
 	    while (n--)
 	    {
-		*dst = FbDoRRop (*dst, and, xor);
+		FbDoRRop (*dst, and, xor, dst);
 		dst++;
 	    }
 	if (endmask)
 	    FbDoRightMaskByteRRop(dst, endbyte, endmask, and, xor);
+	t++;
+	if (t == tileEnd) t = tile;
 	dst += dstStride;
     }
 }

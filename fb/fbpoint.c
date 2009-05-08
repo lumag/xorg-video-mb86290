@@ -83,20 +83,20 @@ fbDots (FbBits	    *dstOrig,
 		FbMaskStip (x, 24, leftMask, n, rightMask);
 		if (leftMask)
 		{
-		    *d = FbDoMaskRRop (*d, andT, xorT, leftMask);
+		    FbDoMaskRRop (*d, andT, xorT, leftMask, d);
 		    andT = FbNext24Stip(andT);
 		    xorT = FbNext24Stip(xorT);
 		    d++;
 		}
 		if (rightMask)
-		    *d = FbDoMaskRRop(*d, andT, xorT, rightMask);
+		    FbDoMaskRRop (*d, andT, xorT, rightMask, d);
 	    }
 	    else
 #endif
 	    {
 		FbStip	mask;
 		mask = FbStipMask(x, dstBpp);
-		*d = FbDoMaskRRop (*d, and, xor, mask);
+		FbDoMaskRRop (*d, and, xor, mask, d);
 	    }
 	}
     }

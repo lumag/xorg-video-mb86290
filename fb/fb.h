@@ -207,10 +207,10 @@ extern void fbSetBits (FbStip *bits, int stride, FbStip data);
 #ifdef FBNOPIXADDR
 #define FbMaskBitsBytes(x,w,copy,l,lb,n,r,rb) FbMaskBits(x,w,l,n,r)
 #define FbDoLeftMaskByteRRop(dst,lb,l,and,xor) { \
-    *dst = FbDoMaskRRop(*dst,and,xor,l); \
+    FbDoMaskRRop (*dst, and, xor, l, dst); \
 }
 #define FbDoRightMaskByteRRop(dst,rb,r,and,xor) { \
-    *dst = FbDoMaskRRop(*dst,and,xor,r); \
+    FbDoMaskRRop (*dst, and, xor, r, dst); \
 }
 #else
 
@@ -401,7 +401,7 @@ extern void fbSetBits (FbStip *bits, int stride, FbStip data);
 	FbStorePart(dst,sizeof (FbBits) - 1,CARD8,xor); \
 	break; \
     default: \
-	*dst = FbDoMaskRRop(*dst, and, xor, l); \
+	FbDoMaskRRop (*dst, and, xor, l, dst); \
 	break; \
     } \
 }
@@ -421,7 +421,7 @@ extern void fbSetBits (FbStip *bits, int stride, FbStip data);
 	break; \
     FbDoRightMaskByteRRop6Cases(dst,xor) \
     default: \
-	*dst = FbDoMaskRRop (*dst, and, xor, r); \
+	FbDoMaskRRop (*dst, and, xor, r, dst); \
     } \
 }
 #endif

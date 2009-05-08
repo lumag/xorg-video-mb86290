@@ -32,7 +32,7 @@
 
 static XF86ModuleVersionInfo VersRec =
 {
-	"fb",
+	"mb86290_fb",
 	MODULEVENDORSTRING,
 	MODINFOSTRING1,
 	MODINFOSTRING2,
@@ -44,6 +44,6 @@ static XF86ModuleVersionInfo VersRec =
 	{0,0,0,0}       /* signature, to be patched into the file by a tool */
 };
 
-XF86ModuleData fbModuleData = { &VersRec, NULL, NULL };
+XF86ModuleData mb86290_fbModuleData = { &VersRec, NULL, NULL };
 
 #endif

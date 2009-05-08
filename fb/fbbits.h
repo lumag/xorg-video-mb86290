@@ -45,7 +45,7 @@
 #ifdef BITSRROP
 #define RROP(b,a,x)	BITSRROP(b,a,x)
 #else
-#define RROP(b,a,x)	(*(b) = FbDoRRop (*(b), (a), (x)))
+#define RROP(b,a,x)	(FbDoRRop (*(b), (a), (x), (b)))
 #endif
 
 #ifdef BITSUNIT
@@ -880,20 +880,25 @@ POLYSEGMENT (DrawablePtr    pDrawable,
 		FbMaskBits (dstX, width, startmask, nmiddle, endmask);
 		if (startmask)
 		{
-		    *dstLine = FbDoMaskRRop (*dstLine, andBits, xorBits, startmask);
+		    FbDoMaskRRop (*dstLine, andBits, xorBits, startmask, dstLine);
 		    dstLine++;
 		}
 		if (!andBits)
 		    while (nmiddle--)
-			*dstLine++ = xorBits;
+		    {
+			FbDoWrite32 (*dstLine, xorBits, dstLine);
+			dstLine++;
+		    }
 		else
 		    while (nmiddle--)
 		    {
-			*dstLine = FbDoRRop (*dstLine, andBits, xorBits);
+			FbDoRRop (*dstLine, andBits, xorBits, dstLine);
 			dstLine++;
 		    }
 		if (endmask)
-		    *dstLine = FbDoMaskRRop (*dstLine, andBits, xorBits, endmask);
+		{
+		    FbDoMaskRRop (*dstLine, andBits, xorBits, endmask, dstLine);
+		}
 	    }
 	    else
 	    {

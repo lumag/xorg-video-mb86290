@@ -99,7 +99,7 @@ fbIn (CARD32 x, CARD8 y)
     return m|n|o|p;
 }
 
-#define fbComposeGetSolid(pict, bits) { \
+#define fbComposeGetSolid(pict, bits, fmt) { \
     FbBits	*__bits__; \
     FbStride	__stride__; \
     int		__bpp__; \
@@ -119,6 +119,14 @@ fbIn (CARD32 x, CARD8 y)
 	break; \
     default: \
 	return; \
+    } \
+    /* If necessary, convert RGB <--> BGR. */ \
+    if (PICT_FORMAT_TYPE((pict)->format) != PICT_FORMAT_TYPE(fmt)) \
+    { \
+        (bits) = (((bits) & 0xff000000) | \
+                  (((bits) & 0x00ff0000) >> 16) | \
+                  (((bits) & 0x0000ff00) >>  0) | \
+                  (((bits) & 0x000000ff) << 16)); \
     } \
     /* manage missing src alpha */ \
     if ((pict)->pFormat->direct.alphaMask == 0) \
@@ -161,14 +169,15 @@ fbCompositeSolidMask_nx8x8888 (CARD8      op,
     CARD8	*maskLine, *mask, m;
     FbStride	dstStride, maskStride;
     CARD16	w;
+    CARD32	__tmp;
 
-    fbComposeGetSolid(pSrc, src);
+    fbComposeGetSolid(pSrc, src, pDst->format);
     
     dstMask = FbFullMask (pDst->pDrawable->depth);
     srca = src >> 24;
     if (src == 0)
 	return;
-    
+
     fbComposeGetStart (pDst, xDst, yDst, CARD32, dstStride, dstLine, 1);
     fbComposeGetStart (pMask, xMask, yMask, CARD8, maskStride, maskLine, 1);
     
@@ -186,14 +195,23 @@ fbCompositeSolidMask_nx8x8888 (CARD8      op,
 	    if (m == 0xff)
 	    {
 		if (srca == 0xff)
-		    *dst = src & dstMask;
+		{
+		    __tmp = src & dstMask;
+		    FbDoWrite32 (*dst, __tmp, dst);
+		}
 		else
-		    *dst = fbOver (src, *dst) & dstMask;
+		{
+		    FbDoWrite32 (__tmp, *dst, dst);
+		    __tmp = fbOver (src, __tmp) & dstMask;
+		    FbDoWrite32 (*dst, __tmp, dst);
+		}
 	    }
 	    else if (m)
 	    {
 		d = fbIn (src, m);
-		*dst = fbOver (d, *dst) & dstMask;
+		FbDoWrite32 (__tmp, *dst, dst);
+		__tmp = fbOver (d, __tmp) & dstMask;
+		FbDoWrite32 (*dst, __tmp, dst);
 	    }
 	    dst++;
 	}
@@ -220,8 +238,9 @@ fbCompositeSolidMask_nx8888x8888C (CARD8      op,
     FbStride	dstStride, maskStride;
     CARD16	w;
     CARD32	m, n, o, p;
+    CARD32	__tmp;
 
-    fbComposeGetSolid(pSrc, src);
+    fbComposeGetSolid(pSrc, src, pDst->format);
     
     dstMask = FbFullMask (pDst->pDrawable->depth);
     srca = src >> 24;
@@ -245,13 +264,20 @@ fbCompositeSolidMask_nx8888x8888C (CARD8      op,
 	    if (ma == 0xffffffff)
 	    {
 		if (srca == 0xff)
-		    *dst = src & dstMask;
+		{
+		    __tmp = src & dstMask;
+		    FbDoWrite32 (*dst, __tmp, dst);
+		}
 		else
-		    *dst = fbOver (src, *dst) & dstMask;
+		{
+		    FbDoWrite32 (__tmp, *dst, dst);
+		    __tmp = fbOver (src, __tmp) & dstMask;
+		    FbDoWrite32 (*dst, __tmp, dst);
+		}
 	    }
 	    else if (ma)
 	    {
-		d = *dst;
+		FbDoWrite32 (d, *dst, dst);
 #define FbInOverC(src,srca,msk,dst,i,result) { \
     CARD16  __a = FbGet8(msk,i); \
     CARD32  __t, __ta; \
@@ -266,7 +292,8 @@ fbCompositeSolidMask_nx8888x8888C (CARD8      op,
 		FbInOverC (src, srca, ma, d, 8, n);
 		FbInOverC (src, srca, ma, d, 16, o);
 		FbInOverC (src, srca, ma, d, 24, p);
-		*dst = m|n|o|p;
+		__tmp = m|n|o|p;
+		FbDoWrite32 (*dst, __tmp, dst);
 	    }
 	    dst++;
 	}
@@ -294,7 +321,7 @@ fbCompositeSolidMask_nx8x0888 (CARD8      op,
     FbStride	dstStride, maskStride;
     CARD16	w;
 
-    fbComposeGetSolid(pSrc, src);
+    fbComposeGetSolid(pSrc, src, pDst->format);
     
     srca = src >> 24;
     if (src == 0)
@@ -355,8 +382,9 @@ fbCompositeSolidMask_nx8x0565 (CARD8      op,
     CARD8	*maskLine, *mask, m;
     FbStride	dstStride, maskStride;
     CARD16	w;
+    CARD16	__tmp;
 
-    fbComposeGetSolid(pSrc, src);
+    fbComposeGetSolid(pSrc, src, pDst->format);
     
     srca = src >> 24;
     if (src == 0)
@@ -382,16 +410,18 @@ fbCompositeSolidMask_nx8x0565 (CARD8      op,
 		    d = src;
 		else
 		{
-		    d = *dst;
+		    FbDoWrite16 (d, *dst, dst);
 		    d = fbOver24 (src, cvt0565to8888(d));
 		}
-		*dst = cvt8888to0565(d);
+		__tmp = cvt8888to0565(d);
+		FbDoWrite16 (*dst, __tmp, dst);
 	    }
 	    else if (m)
 	    {
-		d = *dst;
+		FbDoWrite16 (d, *dst, dst);
 		d = fbOver24 (fbIn(src,m), cvt0565to8888(d));
-		*dst = cvt8888to0565(d);
+		__tmp = cvt8888to0565(d);
+		FbDoWrite16 (*dst, __tmp, dst);
 	    }
 	    dst++;
 	}
@@ -420,8 +450,9 @@ fbCompositeSolidMask_nx8888x0565C (CARD8      op,
     FbStride	dstStride, maskStride;
     CARD16	w;
     CARD32	m, n, o;
+    CARD16	__tmp;
 
-    fbComposeGetSolid(pSrc, src);
+    fbComposeGetSolid(pSrc, src, pDst->format);
     
     srca = src >> 24;
     if (src == 0)
@@ -447,24 +478,26 @@ fbCompositeSolidMask_nx8888x0565C (CARD8      op,
 	    {
 		if (srca == 0xff)
 		{
-		    *dst = src16;
+		    FbDoWrite16 (*dst, src16, dst);
 		}
 		else
 		{
-		    d = *dst;
+		    FbDoWrite16 (d, *dst, dst);
 		    d = fbOver24 (src, cvt0565to8888(d));
-		    *dst = cvt8888to0565(d);
+		    __tmp = cvt8888to0565(d);
+		    FbDoWrite16 (*dst, __tmp, dst);
 		}
 	    }
 	    else if (ma)
 	    {
-		d = *dst;
+		FbDoWrite16 (d, *dst, dst);
 		d = cvt0565to8888(d);
 		FbInOverC (src, srca, ma, d, 0, m);
 		FbInOverC (src, srca, ma, d, 8, n);
 		FbInOverC (src, srca, ma, d, 16, o);
 		d = m|n|o;
-		*dst = cvt8888to0565(d);
+		__tmp = cvt8888to0565(d);
+		FbDoWrite16 (*dst, __tmp, dst);
 	    }
 	    dst++;
 	}
@@ -490,6 +523,7 @@ fbCompositeSrc_8888x8888 (CARD8      op,
     FbStride	dstStride, srcStride;
     CARD8	a;
     CARD16	w;
+    CARD32	__tmp;
     
     fbComposeGetStart (pDst, xDst, yDst, CARD32, dstStride, dstLine, 1);
     fbComposeGetStart (pSrc, xSrc, ySrc, CARD32, srcStride, srcLine, 1);
@@ -509,9 +543,16 @@ fbCompositeSrc_8888x8888 (CARD8      op,
 	    s = *src++;
 	    a = s >> 24;
 	    if (a == 0xff)
-		*dst = s & dstMask;
+	    {
+		__tmp = s & dstMask;
+		FbDoWrite32 (*dst, __tmp, dst);
+	    }
 	    else if (a)
-		*dst = fbOver (s, *dst) & dstMask;
+	    {
+		FbDoWrite32 (__tmp, *dst, dst);
+		__tmp = fbOver (s, __tmp) & dstMask;
+		FbDoWrite32 (*dst, __tmp, dst);
+	    }
 	    dst++;
 	}
     }
@@ -586,6 +627,7 @@ fbCompositeSrc_8888x0565 (CARD8      op,
     CARD8	a;
     FbStride	dstStride, srcStride;
     CARD16	w;
+    CARD16	__tmp;
     
     fbComposeGetStart (pSrc, xSrc, ySrc, CARD32, srcStride, srcLine, 1);
     fbComposeGetStart (pDst, xDst, yDst, CARD16, dstStride, dstLine, 1);
@@ -608,10 +650,11 @@ fbCompositeSrc_8888x0565 (CARD8      op,
 		    d = s;
 		else
 		{
-		    d = *dst;
+		    FbDoWrite16 (d, *dst, dst);
 		    d = fbOver24 (s, cvt0565to8888(d));
 		}
-		*dst = cvt8888to0565(d);
+		__tmp = cvt8888to0565(d);
+		FbDoWrite16 (*dst, __tmp, dst);
 	    }
 	    dst++;
 	}
@@ -650,7 +693,11 @@ fbCompositeSrc_0565x0565 (CARD8      op,
 	w = width;
 
 	while (w--)
-	    *dst++ = *src++;
+	{
+	    FbDoWrite16 (*dst, *src, dst);
+	    dst++;
+	    src++;
+	}
     }
 }
 
@@ -744,7 +791,7 @@ fbCompositeSrcAdd_8888x8888 (CARD8	op,
 	    {
 		if (s != 0xffffffff)
 		{
-		    d = *dst;
+		    FbDoWrite32 (d, *dst, dst);
 		    if (d)
 		    {
 			m = FbAdd(s,d,0,t);
@@ -754,7 +801,7 @@ fbCompositeSrcAdd_8888x8888 (CARD8	op,
 			s = m|n|o|p;
 		    }
 		}
-		*dst = s;
+		FbDoWrite32 (*dst, s, dst);
 	    }
 	    dst++;
 	}
@@ -826,7 +873,7 @@ fbCompositeSolidMask_nx1xn (CARD8      op,
     int		maskXoff, maskYoff;
     FbBits	src;
     
-    fbComposeGetSolid(pSrc, src);
+    fbComposeGetSolid(pSrc, src, pDst->format);
 
     if ((src & 0xff000000) != 0xff000000)
     {
