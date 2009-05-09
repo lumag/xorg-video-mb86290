@@ -21,6 +21,10 @@
  * MA 02111-1307 USA
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "mb86290fb.h"
 #include "gdcdef.h"
 #include "gdcreg.h"
@@ -101,7 +105,7 @@ static void MB86290SubsequentColorExpandScanline(ScrnInfoPtr pScrn, int bufno);
 
 /* -------------------------------------------------------------------- */
 
-#define VERSION                 1000
+#define MB86290_DRIVER_VERSION  1000
 #define MB86290_NAME            "MB86290"
 #define MB86290_DRIVER_NAME     "mb86290"
 #define MB86290_MAJOR_VERSION   0
@@ -109,7 +113,7 @@ static void MB86290SubsequentColorExpandScanline(ScrnInfoPtr pScrn, int bufno);
 #define MB86290_PATCHLEVEL      0
 
 DriverRec MB86290 = {
-	VERSION,
+	MB86290_DRIVER_VERSION,
 	MB86290_DRIVER_NAME,
 	MB86290Identify,
 	MB86290Probe,
@@ -375,7 +379,7 @@ MB86290Probe(DriverPtr drv, int flags)
 		if ((pScrn = xf86ConfigPciEntity(pScrn, 0, usedChips[i], 
 			MB86290PciChipsets, NULL, NULL, NULL, NULL, NULL)))
 		{
-			pScrn->driverVersion = VERSION;
+			pScrn->driverVersion = MB86290_DRIVER_VERSION;
 			pScrn->driverName    = MB86290_DRIVER_NAME;
 			pScrn->name          = MB86290_NAME;
 			pScrn->Probe         = MB86290Probe;

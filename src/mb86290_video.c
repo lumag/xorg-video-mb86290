@@ -21,6 +21,10 @@
  * MA 02111-1307 USA
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "gdcreg.h"
 
 #include "xf86.h"
@@ -32,7 +36,7 @@
 #include "xaa.h"
 #include "xf86i2c.h"
 #include "xf86xv.h"
-#include "Xv.h"
+#include "X11/extensions/Xv.h"
 #include "fourcc.h"
 
 #include "mb86290_driver.h"
@@ -259,7 +263,8 @@ MB86290PutVideo(ScrnInfoPtr	pScrn,
 		short		drw_w,
 		short		drw_h,
 		RegionPtr	clipBoxes,
-		pointer		data)
+		pointer		data,
+		DrawablePtr	pDraw)
 {
 	int l1_ext_mode = 0;
 	MB86290PortPrivPtr pPriv = (MB86290PortPrivPtr)data;
@@ -396,7 +401,7 @@ MB86290InitVideo(ScreenPtr pScreen)
 	MB86290Ptr  fPtr  = MB86290PTR(pScrn);
 	
 	if (!xf86I2CProbeAddress(fPtr->I2C, I2C_SAA7113))
-                return FALSE;
+		return;
 
 	numAdaptors = xf86XVListGenericAdaptors(pScrn, &ptrAdaptors);
 	
