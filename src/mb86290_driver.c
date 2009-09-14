@@ -386,11 +386,11 @@ MB86290Probe(DriverPtr drv, int flags)
 			pScrn->Probe         = MB86290Probe;
 			pScrn->PreInit       = MB86290PreInit;
 			pScrn->ScreenInit    = MB86290ScreenInit;
-			pScrn->SwitchMode    = fbdevHWSwitchMode;
-			pScrn->AdjustFrame   = fbdevHWAdjustFrame;
-			pScrn->EnterVT       = fbdevHWEnterVT;
-			pScrn->LeaveVT       = fbdevHWLeaveVT;
-			pScrn->ValidMode     = fbdevHWValidMode;
+			pScrn->SwitchMode    = fbdevHWSwitchModeWeak();
+			pScrn->AdjustFrame   = fbdevHWAdjustFrameWeak();
+			pScrn->EnterVT       = fbdevHWEnterVTWeak();
+			pScrn->LeaveVT       = fbdevHWLeaveVTWeak();
+			pScrn->ValidMode     = fbdevHWValidModeWeak();
 			foundScreen = TRUE;
 		}
 	}
@@ -607,7 +607,7 @@ MB86290ScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
 	/* Colormap setup */
 	if (!miCreateDefColormap(pScreen))
 		return FALSE;
-	if (!xf86HandleColormaps(pScreen, 256, 8, fbdevHWLoadPalette, NULL, CMAP_PALETTED_TRUECOLOR))
+	if (!xf86HandleColormaps(pScreen, 256, 8, fbdevHWLoadPaletteWeak(), NULL, CMAP_PALETTED_TRUECOLOR))
 		return FALSE;
 
 	if (!xf86I2CProbeAddress(fPtr->I2C, I2C_SAA7113)) 
@@ -627,7 +627,7 @@ MB86290ScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
 		MB86290InitVideo(pScreen);
 
 	/* Provide SaveScreen */
-	pScreen->SaveScreen = fbdevHWSaveScreen;
+	pScreen->SaveScreen = fbdevHWSaveScreenWeak();
 
 	/* Wrap CloseScreen */
 	fPtr->CloseScreen = pScreen->CloseScreen;
