@@ -32,7 +32,11 @@ typedef struct {
 	unsigned char        *fbmem;
 	CloseScreenProcPtr   CloseScreen;
 	EntityInfoPtr        pEnt;
+#ifdef XSERVER_LIBPCIACCESS
+	struct pci_device    *PciInfo;
+#else
 	pciVideoPtr          PciInfo;
+#endif
 	OptionInfoPtr        Options;
 	Bool                 AccelOn;
 	XAAInfoRecPtr        Accel;

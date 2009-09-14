@@ -31,7 +31,6 @@
 
 #include "xf86.h"
 #include "xf86_OSproc.h"
-#include "xf86_ansic.h"
 #include "mipointer.h"
 #include "mibstore.h"
 #include "micmap.h"
@@ -208,7 +207,7 @@ static XF86ModuleVersionInfo MB86290VersRec =
 	MODULEVENDORSTRING,
 	MODINFOSTRING1,
 	MODINFOSTRING2,
-	XF86_VERSION_CURRENT,
+	XORG_VERSION_CURRENT,
 	MB86290_MAJOR_VERSION, MB86290_MINOR_VERSION, MB86290_PATCHLEVEL,
 	ABI_CLASS_VIDEODRV,
 	ABI_VIDEODRV_VERSION,
@@ -473,7 +472,11 @@ MB86290PreInit(ScrnInfoPtr pScrn, int flags)
 	xf86ProcessOptions(pScrn->scrnIndex, fPtr->pEnt->device->options, fPtr->Options);
 
 	pScrn->progClock = TRUE;
+#ifndef XSERVER_LIBPCIACCESS
 	pScrn->chipset   = (char *)xf86TokenToString(MB86290Chipsets, fPtr->PciInfo->chipType);
+#else
+	pScrn->chipset   = (char *)xf86TokenToString(MB86290Chipsets, fPtr->PciInfo->device_id);
+#endif
 	pScrn->videoRam  = fbdevHWGetVidmem(pScrn);
 	
 	/* Select video modes */
