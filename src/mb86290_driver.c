@@ -54,6 +54,10 @@
 static const OptionInfoRec  *MB86290AvailableOptions(int chipid, int busid);
 static void                 MB86290Identify(int flags);
 static Bool                 MB86290Probe(DriverPtr drv, int flags);
+#ifdef XSERVER_LIBPCIACCESS
+static Bool MB86290PciProbe(DriverPtr drv, int entity_num,
+			  struct pci_device *dev, intptr_t match_data);
+#endif
 static Bool                 MB86290PreInit(ScrnInfoPtr pScrn, int flags);
 static Bool                 MB86290ScreenInit(int Index, ScreenPtr pScreen, 
 				int argc, char **argv);
@@ -111,6 +115,23 @@ static void MB86290SubsequentColorExpandScanline(ScrnInfoPtr pScrn, int bufno);
 #define MB86290_MINOR_VERSION   1
 #define MB86290_PATCHLEVEL      0
 
+#ifdef XSERVER_LIBPCIACCESS
+/*
+ * libpciaccess's masks are shifted by 8 bits compared to the ones in xf86Pci.h.
+ */
+#define LIBPCIACCESS_CLASS_SHIFT (PCI_CLASS_SHIFT - 8)
+#define LIBPCIACCESS_CLASS_MASK (PCI_CLASS_MASK >> 8)
+
+static const struct pci_id_match mb86290_device_match[] = {
+    {
+	PCI_VENDOR_FUJITSU, PCI_CHIP_MB86290, PCI_MATCH_ANY, PCI_MATCH_ANY,
+	PCI_CLASS_DISPLAY << LIBPCIACCESS_CLASS_SHIFT, LIBPCIACCESS_CLASS_MASK, 0
+    },
+
+    { 0, 0, 0 },
+};
+#endif
+
 DriverRec MB86290 = {
 	MB86290_DRIVER_VERSION,
 	MB86290_DRIVER_NAME,
@@ -118,7 +139,12 @@ DriverRec MB86290 = {
 	MB86290Probe,
 	MB86290AvailableOptions,
 	NULL,
-	0
+	0,
+	NULL,
+#ifdef XSERVER_LIBPCIACCESS
+    mb86290_device_match,
+    MB86290PciProbe,
+#endif
 };
 
 /* Supported chipsets */
@@ -341,6 +367,51 @@ MB86290Identify(int flags)
 {
 	xf86PrintChipsets(MB86290_NAME, "Fujitsu chip", MB86290Chipsets);
 }
+
+#ifdef XSERVER_LIBPCIACCESS
+static Bool MB86290PciProbe(DriverPtr drv, int entity_num,
+			  struct pci_device *dev, intptr_t match_data)
+{
+    ScrnInfoPtr pScrn = NULL;
+
+    if (!xf86LoadDrvSubModule(drv, "fbdevhw"))
+	return FALSE;
+	    
+    pScrn = xf86ConfigPciEntity(NULL, 0, entity_num, NULL, NULL,
+				NULL, NULL, NULL, NULL);
+    if (pScrn) {
+	char *device;
+	GDevPtr devSection = xf86GetDevFromEntity(pScrn->entityList[0],
+						  pScrn->entityInstanceList[0]);
+
+	device = xf86FindOptionValue(devSection->options, "fbdev");
+	if (fbdevHWProbe(NULL, device, NULL)) {
+	    pScrn->driverVersion = MB86290_DRIVER_VERSION;
+	    pScrn->driverName    = MB86290_DRIVER_NAME;
+	    pScrn->name          = MB86290_NAME;
+	    pScrn->Probe         = MB86290Probe;
+	    pScrn->PreInit       = MB86290PreInit;
+	    pScrn->ScreenInit    = MB86290ScreenInit;
+	    pScrn->SwitchMode    = fbdevHWSwitchModeWeak();
+	    pScrn->AdjustFrame   = fbdevHWAdjustFrameWeak();
+	    pScrn->EnterVT       = fbdevHWEnterVTWeak();
+	    pScrn->LeaveVT       = fbdevHWLeaveVTWeak();
+	    pScrn->ValidMode     = fbdevHWValidModeWeak();
+
+	    xf86DrvMsg(pScrn->scrnIndex, X_CONFIG,
+		       "claimed PCI slot %d@%d:%d:%d\n", 
+		       dev->bus, dev->domain, dev->dev, dev->func);
+	    xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+		       "using %s\n", device ? device : "default device");
+	}
+	else {
+	    pScrn = NULL;
+	}
+    }
+
+    return (pScrn != NULL);
+}
+#endif
 
 static Bool
 MB86290Probe(DriverPtr drv, int flags)
