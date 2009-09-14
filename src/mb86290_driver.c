@@ -353,8 +353,10 @@ MB86290Probe(DriverPtr drv, int flags)
 	ScrnInfoPtr pScrn = NULL;
 	int         i;
 
+#ifndef XSERVER_LIBPCIACCESS
 	if (!xf86GetPciVideoInfo())
 		return FALSE;
+#endif
 	
 	if ((numDevSections = xf86MatchDevice(MB86290_DRIVER_NAME, &devSections)) <= 0)
 		return FALSE;
