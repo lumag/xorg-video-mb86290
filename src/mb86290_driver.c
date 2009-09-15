@@ -46,6 +46,8 @@
 
 #include "mb86290_driver.h"
 
+#include <sys/time.h>
+
 #define PCI_CHIP_MB86290     0x2019
 #define PCI_VENDOR_FUJITSU   0x10CF
 
@@ -834,21 +836,34 @@ MB86290WriteFifo(int count, ...)
 static void
 udelay(int usec)
 {
-	long b_secs, b_usecs;
-	long a_secs, a_usecs;
-	long d_secs, d_usecs;
+	struct timeval a, b, d;
 	long diff;
 	
 	if (usec > 0) {
-		xf86getsecs(&b_secs, &b_usecs);
+		gettimeofday(&b, NULL);
 		do {
 			/* It would be nice to use {xf86}usleep, 
 			 * but usleep (1) takes >10000 usec !
 			 */
-			xf86getsecs(&a_secs, &a_usecs);
-			d_secs  = (a_secs - b_secs);
-			d_usecs = (a_usecs - b_usecs);
-			diff = d_secs*1000000 + d_usecs;
+			gettimeofday(&a, NULL);
+			/* Perform the carry for the later subtraction by updating A. */
+			if (a.tv_usec < b.tv_usec) {
+				int nsec = (b.tv_usec - a.tv_usec) / 1000000 + 1;
+				b.tv_usec -= 1000000 * nsec;
+				b.tv_sec += nsec;
+			}
+			if (a.tv_usec - b.tv_usec > 1000000) {
+				int nsec = (a.tv_usec - b.tv_usec) / 1000000;
+				b.tv_usec += 1000000 * nsec;
+				b.tv_sec -= nsec;
+			}
+
+			/* Compute the time remaining to wait.
+			 * `tv_usec' is certainly positive. */
+			d.tv_sec = a.tv_sec - b.tv_sec;
+			d.tv_usec = a.tv_usec - b.tv_usec;
+
+			diff = d.tv_sec*1000000 + d.tv_usec;
 		} while (diff>0 && diff< (usec + 1));
 	}
 }
