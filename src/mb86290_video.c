@@ -174,11 +174,12 @@ MB86290SetPortAttribute(ScrnInfoPtr pScrn,
 		    INT32 value, 
 		    pointer data)
 {
+	ENTER();
 	MB86290PortPrivPtr pPriv = (MB86290PortPrivPtr)data;
 	I2CByte reg;
 
 	if (attribute == xvEncoding) {
-		return Success;
+		LEAVE(Success);
 	}
 	else if (attribute == xvBrightness) {
 		reg = 0x0A;
@@ -193,12 +194,12 @@ MB86290SetPortAttribute(ScrnInfoPtr pScrn,
 		reg = 0x0D;
 	}
 	else {
-		return BadMatch;
+		LEAVE(BadMatch);
 	}
 
 	if (xf86I2CWriteByte(&pPriv->I2CDev, reg, value))
-		return Success;
-	return BadMatch;
+		LEAVE(Success);
+	LEAVE(BadMatch);
 }
 
 static int 
@@ -207,11 +208,12 @@ MB86290GetPortAttribute(ScrnInfoPtr pScrn,
 		    INT32 *value, 
 		    pointer data)
 {
+	ENTER();
 	MB86290PortPrivPtr pPriv = (MB86290PortPrivPtr)data;
 	I2CByte reg, val;
 
 	if (attribute == xvEncoding) {
-		return Success;
+		LEAVE(Success);
 	}
 	else if (attribute == xvBrightness) {
 		reg = 0x0A;
@@ -226,15 +228,15 @@ MB86290GetPortAttribute(ScrnInfoPtr pScrn,
 		reg = 0x0D;
 	}
 	else {
-		return BadMatch;
+		LEAVE(BadMatch);
 	}
 
 	if (xf86I2CReadByte(&pPriv->I2CDev, reg, &val)) {
 		*value = val;
-		return Success;
+		LEAVE(Success);
 	}
 
-	return BadMatch;
+	LEAVE(BadMatch);
 }
 
 static void 
@@ -245,10 +247,12 @@ MB86290QueryBestSize(ScrnInfoPtr pScrn,
 		 unsigned int *p_w, unsigned int *p_h, 
 		 pointer data)
 {
+	ENTER();
 	*p_w = drw_w;
 	*p_h = drw_h; 
 	
 	/* TODO: report the HW limitation */
+	LEAVE();
 }
 
 static int
@@ -265,6 +269,7 @@ MB86290PutVideo(ScrnInfoPtr	pScrn,
 		pointer		data,
 		DrawablePtr	pDraw)
 {
+	ENTER();
 	int l1_ext_mode = 0;
 	MB86290PortPrivPtr pPriv = (MB86290PortPrivPtr)data;
 	long off = pScrn->virtualX * pScrn->virtualY * 2 + pPriv->fbLinearPtr->offset;
@@ -301,12 +306,13 @@ MB86290PutVideo(ScrnInfoPtr	pScrn,
 /*	MB86290WriteCaptureReg(GDC_CAP_REG_MODE, MB86290ReadCaptureReg(GDC_CAP_REG_MODE) | 0x80000000);*/
 	MB86290WriteDispReg(GDC_DISP_REG_EXT_MODE, MB86290ReadDispReg(GDC_DISP_REG_EXT_MODE) | 0x80020000);
 
-	return Success;
+	LEAVE(Success);
 }
 
 static void 
 MB86290StopVideo(ScrnInfoPtr pScrn, pointer data, Bool shutdown)
 {
+	ENTER();
 	MB86290PortPrivPtr pPriv = (MB86290PortPrivPtr)data;
 
 	if (shutdown)
@@ -317,11 +323,13 @@ MB86290StopVideo(ScrnInfoPtr pScrn, pointer data, Bool shutdown)
 			    MB86290ReadDispReg(GDC_DISP_REG_EXT_MODE) 
 			    & ~0x00020000);
 	pPriv->videoBeenShutdown = shutdown;
+	LEAVE();
 }
 
 static XF86VideoAdaptorPtr 
 MB86290SetupVideo(ScreenPtr pScreen)
 {
+	ENTER();
 	ScrnInfoPtr pScrn = xf86Screens[pScreen->myNum];
 	MB86290Ptr fPtr = MB86290PTR(pScrn);
 	XF86VideoAdaptorPtr adapt;
@@ -330,7 +338,7 @@ MB86290SetupVideo(ScreenPtr pScreen)
 	if(!(adapt = xcalloc(1, sizeof(XF86VideoAdaptorRec) +
 			     sizeof(MB86290PortPrivRec) +
 			     sizeof(DevUnion))))
-		return NULL;
+		LEAVE(NULL);
 	
 	adapt->type = XvWindowMask | XvInputMask | XvVideoMask;
 	adapt->flags = VIDEO_OVERLAID_IMAGES | VIDEO_CLIP_TO_VIEWPORT | VIDEO_NO_CLIPPING;
@@ -378,7 +386,7 @@ MB86290SetupVideo(ScreenPtr pScreen)
 	    || !xf86I2CDevInit(&pPriv->I2CDev)
 	    || !xf86I2CWriteVec(&pPriv->I2CDev, SAA7113InitData, COUNTOF(SAA7113InitData) / 2)) {
 		xfree(adapt);
-		return NULL;
+		LEAVE(NULL);
 	}
 
 	xvEncoding   = MAKE_ATOM(XV_ENCODING_NAME);
@@ -387,12 +395,13 @@ MB86290SetupVideo(ScreenPtr pScreen)
 	xvBrightness = MAKE_ATOM(XV_BRIGHTNESS_NAME);
 	xvContrast   = MAKE_ATOM(XV_CONTRAST_NAME);
 
-	return adapt;
+	LEAVE(adapt);
 }
 
 void
 MB86290InitVideo(ScreenPtr pScreen)
 {
+	ENTER();
 	ScrnInfoPtr pScrn = xf86Screens[pScreen->myNum];
 	XF86VideoAdaptorPtr *ptrAdaptors, *newAdaptors = NULL;
 	XF86VideoAdaptorPtr newAdaptor = NULL;
@@ -400,7 +409,7 @@ MB86290InitVideo(ScreenPtr pScreen)
 	MB86290Ptr  fPtr  = MB86290PTR(pScrn);
 	
 	if (!xf86I2CProbeAddress(fPtr->I2C, I2C_SAA7113))
-		return;
+		LEAVE();
 
 	numAdaptors = xf86XVListGenericAdaptors(pScrn, &ptrAdaptors);
 	
@@ -430,6 +439,7 @@ MB86290InitVideo(ScreenPtr pScreen)
 	if (newAdaptors != NULL) {
 		xfree(newAdaptors);
 	}
+	LEAVE();
 }
 
 

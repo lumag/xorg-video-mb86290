@@ -80,6 +80,14 @@ AC_SUBST([DRIVER_NAME])
 XORG_MANPAGE_SECTIONS
 XORG_RELEASE_VERSION
 
+AC_ARG_ENABLE([debug],
+	      [AS_HELP_STRING([--enable-debug],
+			      [enable debugging code (default is no)])],
+	      [enable_debug=$enableval],
+	      [enable_debug=no])
+AS_IF([test "x$enable_debug" != xno],
+      [AC_DEFINE([MB86290_DEBUG], [1], [Define to enable debugging code])])
+
 AC_OUTPUT([
 	Makefile
 	src/Makefile

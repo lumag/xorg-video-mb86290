@@ -66,4 +66,24 @@ Bool MB86290I2CInit(ScrnInfoPtr pScrn);
 
 void MB86290InitVideo(ScreenPtr pScreen);
 
+#ifdef MB86290_DEBUG
+extern int mb86290_indent;
+# define VERBLEV	1
+# define ENTER()	xf86ErrorFVerb(VERBLEV, "%*c %s\n",\
+				       mb86290_indent++, '>', __FUNCTION__)
+# define LEAVE(...)							\
+    do {								\
+	xf86ErrorFVerb(VERBLEV, "%*c %s\n",				\
+		       --mb86290_indent, '<', __FUNCTION__);		\
+	return __VA_ARGS__;						\
+    } while (0)
+# define DEBUG(...)	xf86ErrorFVerb(VERBLEV, __VA_ARGS__)
+#else
+# define VERBLEV	4
+# define ENTER()	/**/
+# define LEAVE(...)	return __VA_ARGS__
+# define DEBUG(...)	/**/
+#endif
+
+
 #endif /* __MB86290_DRIVER_H */

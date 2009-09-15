@@ -55,54 +55,64 @@ static Bool
 MB86290WaitI2CEvent()
 {
 	long status;
+	ENTER();
 	while (!((status = MB86290ReadI2CReg(GDC_I2C_REG_BUS_CONTROL)) & (I2C_INT | I2C_BER)));
-	return !(status & I2C_BER);
+	LEAVE(!(status & I2C_BER));
 }
 
 static Bool
 MB86290I2CAddress(I2CDevPtr d, I2CSlaveAddr addr)
 {
+	ENTER();
 	MB86290WriteI2CReg(GDC_I2C_REG_DATA, addr);
 	MB86290WriteI2CReg(GDC_I2C_REG_CLOCK, I2C_CLOCK_AND_ENABLE);
 	MB86290WriteI2CReg(GDC_I2C_REG_BUS_CONTROL, 
 			   d->pI2CBus->DriverPrivate.val ? I2C_REPEATED_START : I2C_START);
-	if (!MB86290WaitI2CEvent())
-		return FALSE;
+	if (!MB86290WaitI2CEvent()) {
+		LEAVE(FALSE);
+	}
 	d->pI2CBus->DriverPrivate.val = !(MB86290ReadI2CReg(GDC_I2C_REG_BUS_STATUS) & I2C_LRB);
-	return d->pI2CBus->DriverPrivate.val;
+	LEAVE(d->pI2CBus->DriverPrivate.val);
 }
 
 static Bool
 MB86290I2CPutByte(I2CDevPtr d, I2CByte data)
 {
+	ENTER();
 	MB86290WriteI2CReg(GDC_I2C_REG_DATA, data);
 	MB86290WriteI2CReg(GDC_I2C_REG_BUS_CONTROL, I2C_START);
-	if (!MB86290WaitI2CEvent())
-		return FALSE;
-	return !(MB86290ReadI2CReg(GDC_I2C_REG_BUS_STATUS) & I2C_LRB);
+	if (!MB86290WaitI2CEvent()) {
+		LEAVE(FALSE);
+	}
+	LEAVE(!(MB86290ReadI2CReg(GDC_I2C_REG_BUS_STATUS) & I2C_LRB));
 }
 
 static Bool
 MB86290I2CGetByte(I2CDevPtr d, I2CByte *data, Bool last)
 {
+	ENTER();
 	MB86290WriteI2CReg(GDC_I2C_REG_BUS_CONTROL, I2C_START | (last ? 0 : I2C_ACK));
-	if (!MB86290WaitI2CEvent())
-		return FALSE;
+	if (!MB86290WaitI2CEvent()) {
+		LEAVE(FALSE);
+	}
 	*data = MB86290ReadI2CReg(GDC_I2C_REG_DATA);
-	return TRUE;
+	LEAVE(TRUE);
 }
 
 static void
 MB86290I2CStop(I2CDevPtr d)
 {
+	ENTER();
 	MB86290WriteI2CReg(GDC_I2C_REG_BUS_CONTROL, I2C_STOP);
 	MB86290WriteI2CReg(GDC_I2C_REG_CLOCK, I2C_DISABLE);
 	d->pI2CBus->DriverPrivate.val = 0;
+	LEAVE();
 }
 
 Bool
 MB86290I2CInit(ScrnInfoPtr pScrn)
 {
+	ENTER();
 	MB86290Ptr fPtr = MB86290PTR(pScrn);
 
 	if (fPtr->I2C == NULL)
@@ -110,7 +120,7 @@ MB86290I2CInit(ScrnInfoPtr pScrn)
 		I2CBusPtr I2CPtr = xf86CreateI2CBusRec();
 		if (I2CPtr == NULL)
 		{
-			return(FALSE);
+			LEAVE(FALSE);
 		}
 
 		I2CPtr->BusName    = "MB86290 I2C bus";
@@ -124,13 +134,13 @@ MB86290I2CInit(ScrnInfoPtr pScrn)
 		if (!xf86I2CBusInit(I2CPtr))
 		{
 			xf86DestroyI2CBusRec(I2CPtr, TRUE, TRUE);
-			return(FALSE);
+			LEAVE(FALSE);
 		}
 
 		fPtr->I2C = I2CPtr;
 	}
 
-	return(TRUE);
+	LEAVE(TRUE);
 }
 
 

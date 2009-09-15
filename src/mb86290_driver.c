@@ -258,76 +258,97 @@ const int disp_reg_off = GDC_DISP_BASE - GDC_HOST_BASE;
 long 
 MB86290ReadDrawReg(long off)
 {
-	return MMIO_IN32(mb86290_acc_regs, draw_reg_off + off);
+	ENTER();
+	long r = MMIO_IN32(mb86290_acc_regs, draw_reg_off + off);
+	LEAVE(r);
 }
 
 void 
 MB86290WriteDrawReg(long off, long val)
 {
+	ENTER();
 	MMIO_OUT32(mb86290_acc_regs, draw_reg_off + off, val);
+	LEAVE();
 }
 
 long 
 MB86290ReadGeoReg(long off)
 {
-	return MMIO_IN32(mb86290_acc_regs, geo_reg_off + off);
+	ENTER();
+	long r = MMIO_IN32(mb86290_acc_regs, geo_reg_off + off);
+	LEAVE(r);
 }
 
 void 
 MB86290WriteGeoReg(long off, long val)
 {
+	ENTER();
 	MMIO_OUT32(mb86290_acc_regs, geo_reg_off + off, val);
+	LEAVE();
 }
 
 long 
 MB86290ReadI2CReg(long off)
 {
-	return MMIO_IN8(mb86290_acc_regs, i2c_reg_off + off);
+	ENTER();
+	long r = MMIO_IN8(mb86290_acc_regs, i2c_reg_off + off);
+	LEAVE(r);
 }
 
 void 
 MB86290WriteI2CReg(long off, long val)
 {
+	ENTER();
 	MMIO_OUT8(mb86290_acc_regs, i2c_reg_off + off, val);
+	LEAVE();
 }
 
 long 
 MB86290ReadCaptureReg(long off)
 {
-	return MMIO_IN32(mb86290_acc_regs, capture_reg_off + off);
+	ENTER();
+	long r = MMIO_IN32(mb86290_acc_regs, capture_reg_off + off);
+	LEAVE(r);
 }
 
 void 
 MB86290WriteCaptureReg(long off, long val)
 {
+	ENTER();
 	MMIO_OUT32(mb86290_acc_regs, capture_reg_off + off, val);
+	LEAVE();
 }
 
 long 
 MB86290ReadDispReg(long off)
 {
-	return MMIO_IN32(mb86290_acc_regs, disp_reg_off + off);
+	ENTER();
+	long r = MMIO_IN32(mb86290_acc_regs, disp_reg_off + off);
+	LEAVE(r);
 }
 
 void 
 MB86290WriteDispReg(long off, long val)
 {
+	ENTER();
 	MMIO_OUT32(mb86290_acc_regs, disp_reg_off + off, val);
+	LEAVE();
 }
 
 static pointer
 MB86290Setup(pointer module, pointer opts, int *errmaj, int *errmin)
 {
+	ENTER();
 	static Bool setupDone = FALSE;
 
 	if (!setupDone) {
 		setupDone = TRUE;
 		xf86AddDriver(&MB86290, module, 0);
 		LoaderRefSymLists(mb86290_fbSymbols, xaaSymbols, i2cSymbols, NULL);
-		return (pointer)1;
+		LEAVE((pointer)1);
 	} else {
 		if (errmaj) *errmaj = LDR_ONCEONLY;
-		return NULL;
+		LEAVE(NULL);
 	}
 }
 
@@ -340,20 +361,23 @@ MODULESETUPPROTO(MB86290Setup);
 static Bool
 MB86290GetRec(ScrnInfoPtr pScrn)
 {
+	ENTER();
 	if (pScrn->driverPrivate != NULL)
-		return TRUE;
+		LEAVE(TRUE);
 	
 	pScrn->driverPrivate = xnfcalloc(sizeof(MB86290Rec), 1);
-	return TRUE;
+	LEAVE(TRUE);
 }
 
 static void
 MB86290FreeRec(ScrnInfoPtr pScrn)
 {
+	ENTER();
 	if (pScrn->driverPrivate == NULL)
-		return;
+		LEAVE();
 	xfree(pScrn->driverPrivate);
 	pScrn->driverPrivate = NULL;
+	LEAVE();
 }
 
 /* -------------------------------------------------------------------- */
@@ -361,23 +385,27 @@ MB86290FreeRec(ScrnInfoPtr pScrn)
 static const OptionInfoRec *
 MB86290AvailableOptions(int chipid, int busid)
 {
-	return MB86290Options;
+	ENTER();
+	LEAVE(MB86290Options);
 }
 
 static void
 MB86290Identify(int flags)
 {
+	ENTER();
 	xf86PrintChipsets(MB86290_NAME, "Fujitsu chip", MB86290Chipsets);
+	LEAVE();
 }
 
 #ifdef XSERVER_LIBPCIACCESS
 static Bool MB86290PciProbe(DriverPtr drv, int entity_num,
 			  struct pci_device *dev, intptr_t match_data)
 {
+	ENTER();
     ScrnInfoPtr pScrn = NULL;
 
     if (!xf86LoadDrvSubModule(drv, "fbdevhw"))
-	return FALSE;
+	LEAVE(FALSE);
 	    
     pScrn = xf86ConfigPciEntity(NULL, 0, entity_num, NULL, NULL,
 				NULL, NULL, NULL, NULL);
@@ -411,13 +439,14 @@ static Bool MB86290PciProbe(DriverPtr drv, int entity_num,
 	}
     }
 
-    return (pScrn != NULL);
+    LEAVE((pScrn != NULL));
 }
 #endif
 
 static Bool
 MB86290Probe(DriverPtr drv, int flags)
 {
+	ENTER();
 	int         numUsed;
 	int         numDevSections;
 	int         *usedChips;
@@ -428,14 +457,14 @@ MB86290Probe(DriverPtr drv, int flags)
 
 #ifndef XSERVER_LIBPCIACCESS
 	if (!xf86GetPciVideoInfo())
-		return FALSE;
+		LEAVE(FALSE);
 #endif
 	
 	if ((numDevSections = xf86MatchDevice(MB86290_DRIVER_NAME, &devSections)) <= 0)
-		return FALSE;
+		LEAVE(FALSE);
 	
 	if (!xf86LoadDrvSubModule(drv, "fbdevhw"))
-		return FALSE;
+		LEAVE(FALSE);
 	xf86LoaderReqSymLists(fbdevHWSymbols, NULL);
 
 	if ((numUsed = xf86MatchPciInstances(MB86290_NAME, 
@@ -446,7 +475,7 @@ MB86290Probe(DriverPtr drv, int flags)
 			numDevSections, 
 			drv, 
 			&usedChips)) <= 0)
-	return FALSE;
+		LEAVE(FALSE);
 
 	for (i = 0; i < numUsed; i++)
 	{
@@ -471,18 +500,19 @@ MB86290Probe(DriverPtr drv, int flags)
 	xfree(usedChips);
 	xfree(devSections);
 
-	return foundScreen;
+	LEAVE(foundScreen);
 }
 
 static Bool
 MB86290PreInit(ScrnInfoPtr pScrn, int flags)
 {
+	ENTER();
 	MB86290Ptr fPtr;
 	int        depth;
 	int        fbbpp;
 	
 	if (pScrn->numEntities != 1)
-		return FALSE;
+		LEAVE(FALSE);
 
 	MB86290GetRec(pScrn);
 	
@@ -587,21 +617,22 @@ MB86290PreInit(ScrnInfoPtr pScrn, int flags)
 		MB86290I2CInit(pScrn);
 	}
 
-	return TRUE;
+	LEAVE(TRUE);
 fail:
 	MB86290FreeRec(pScrn);
-	return FALSE;
+	LEAVE(FALSE);
 }
 
 static Bool
 MB86290ScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
 {
+	ENTER();
 	ScrnInfoPtr pScrn = xf86Screens[pScreen->myNum];
 	MB86290Ptr  fPtr  = MB86290PTR(pScrn);
 	BoxRec AvailFBArea;
 
 	if ((fPtr->fbmem = fbdevHWMapVidmem(pScrn)) == NULL)
-		return FALSE;
+		LEAVE(FALSE);
 	fPtr->fbstart = fPtr->fbmem + fbdevHWLinearOffset(pScrn);
 
 	mb86290_acc_regs = fPtr->fbmem + GDC_HOST_BASE;
@@ -609,7 +640,7 @@ MB86290ScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
 	fbdevHWSave(pScrn);
 
 	if (!fbdevHWModeInit(pScrn, pScrn->currentMode))
-		return FALSE;
+		LEAVE(FALSE);
 	
 	fbdevHWSaveScreen(pScreen, SCREEN_SAVER_ON);
 	
@@ -618,20 +649,20 @@ MB86290ScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
 	miClearVisualTypes();
 	if (pScrn->bitsPerPixel > 8) {
 		if (!miSetVisualTypes(pScrn->depth, TrueColorMask, pScrn->rgbBits, TrueColor))
-			return FALSE;
+			LEAVE(FALSE);
 	} else {
 		if (!miSetVisualTypes(pScrn->depth,
 				      miGetDefaultVisualMask(pScrn->depth),
 				      pScrn->rgbBits, pScrn->defaultVisual))
-			return FALSE;
+			LEAVE(FALSE);
 	}
 
 	if (!miSetPixmapDepths())
-		return FALSE;
+		LEAVE(FALSE);
 
 	if (!fbScreenInit(pScreen, fPtr->fbstart, pScrn->virtualX, pScrn->virtualY, 
 			pScrn->xDpi, pScrn->yDpi, pScrn->displayWidth, pScrn->bitsPerPixel))
-		return FALSE;
+		LEAVE(FALSE);
 
 	xf86SetBlackWhitePixels(pScreen);
 	
@@ -679,12 +710,12 @@ MB86290ScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
 	
 	/* Colormap setup */
 	if (!miCreateDefColormap(pScreen))
-		return FALSE;
+		LEAVE(FALSE);
 	if (!xf86HandleColormaps(pScreen, 256, 8, fbdevHWLoadPaletteWeak(), NULL, CMAP_PALETTED_TRUECOLOR))
-		return FALSE;
+		LEAVE(FALSE);
 
-	if (!xf86I2CProbeAddress(fPtr->I2C, I2C_SAA7113)) 
-		return FALSE;
+	if (!xf86I2CProbeAddress(fPtr->I2C, I2C_SAA7113))
+		LEAVE(FALSE);
 
 	/* FIXME board actually has 64M, but there's 256K area of inner registers at 32M offset
 	   and it should be protected from allocation somehow */
@@ -693,8 +724,8 @@ MB86290ScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
 	AvailFBArea.x2 = pScrn->displayWidth;
 	AvailFBArea.y2 = (32 * 1024 * 1024) / (pScrn->displayWidth * 2);
 
-	if (!xf86InitFBManager(pScreen, &AvailFBArea)) 
-		return FALSE;
+	if (!xf86InitFBManager(pScreen, &AvailFBArea))
+		LEAVE(FALSE);
 
 	if (!xf86ReturnOptValBool(fPtr->Options, OPTION_NOVIDEO, FALSE))
 		MB86290InitVideo(pScreen);
@@ -706,12 +737,13 @@ MB86290ScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
 	fPtr->CloseScreen = pScreen->CloseScreen;
 	pScreen->CloseScreen = MB86290CloseScreen;
 
-	return TRUE;
+	LEAVE(TRUE);
 }
 
 static Bool
 MB86290CloseScreen(int scrnIndex, ScreenPtr pScreen)
 {
+	ENTER();
 	ScrnInfoPtr pScrn = xf86Screens[scrnIndex];
 	MB86290Ptr  fPtr  = MB86290PTR(pScrn);
 	
@@ -725,7 +757,7 @@ MB86290CloseScreen(int scrnIndex, ScreenPtr pScreen)
 
 	pScreen->CloseScreen = fPtr->CloseScreen;
 
-	return (*pScreen->CloseScreen)(scrnIndex, pScreen);
+	LEAVE((*pScreen->CloseScreen)(scrnIndex, pScreen));
 }
 
 /* -------------------------------------------------------------------- */
@@ -733,6 +765,7 @@ MB86290CloseScreen(int scrnIndex, ScreenPtr pScreen)
 static Bool
 MB86290AccelInit(ScreenPtr pScreen)
 {
+	ENTER();
 	ScrnInfoPtr   pScrn;
 	MB86290Ptr    fPtr;
 	XAAInfoRecPtr a;
@@ -743,7 +776,7 @@ MB86290AccelInit(ScreenPtr pScreen)
 	if (!(a = fPtr->Accel = XAACreateInfoRec())) {
 		xf86DrvMsg(pScrn->scrnIndex, X_ERROR, 
 				"XAACreateInfoRec Error\n");
-		return FALSE;
+		LEAVE(FALSE);
 	}
 	
 	/* Sync function */
@@ -801,7 +834,7 @@ MB86290AccelInit(ScreenPtr pScreen)
 	if (!XAAInit(pScreen, a)) {
 		xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
 				"XAAInit Error\n");
-		return FALSE;
+		LEAVE(FALSE);
 	}
 
 	/* Init drawing engine */
@@ -809,18 +842,21 @@ MB86290AccelInit(ScreenPtr pScreen)
 	MB86290WriteDrawReg(GDC_REG_MODE_MISC, 0x8000);   /* 16 bpp */
 	MB86290WriteDrawReg(GDC_REG_X_RESOLUTION, 0x400); /* 1024 */
 
-	return TRUE;
+	LEAVE(TRUE);
 }
 
 static void
 MB86290Wait(int needed_slots)
 {
+	ENTER();
 	while (MB86290ReadDrawReg(GDC_REG_FIFO_COUNT) < needed_slots);
+	LEAVE();
 }
 
 static void
 MB86290WriteFifo(int count, ...)
 {
+	ENTER();
 	va_list params;
 	int i;
 
@@ -831,11 +867,13 @@ MB86290WriteFifo(int count, ...)
 		MB86290WriteGeoReg(GDC_GEO_REG_INPUT_FIFO, va_arg(params, unsigned long));
 	}
 	va_end(params);
+	LEAVE();
 }
 
 static void
 udelay(int usec)
 {
+	ENTER();
 	struct timeval a, b, d;
 	long diff;
 	
@@ -866,11 +904,13 @@ udelay(int usec)
 			diff = d.tv_sec*1000000 + d.tv_usec;
 		} while (diff>0 && diff< (usec + 1));
 	}
+	LEAVE();
 }
 
 static void
 MB86290Sync(ScrnInfoPtr pScrn)
 {
+	ENTER();
 	int i = 1000;
 
 	/* sometimes the chip interminably reports that it's busy,
@@ -881,17 +921,21 @@ MB86290Sync(ScrnInfoPtr pScrn)
 	if (!i) {
 		ErrorF("MB86290Sync timed out\n");
 	}
+	LEAVE();
 }
 
 static void
 MB86290SetupForScreenToScreenCopy(ScrnInfoPtr pScrn, int xdir, int ydir, int rop, unsigned int planemask, int trans_color)
 {
+	ENTER();
 	MB86290WriteDrawReg(GDC_REG_MODE_BITMAP, (2 << 7) | (rop << 9)); /* Set raster operation */
+	LEAVE();
 }
 
 static void
 MB86290SubsequentScreenToScreenCopy(ScrnInfoPtr pScrn, int x1, int y1, int x2, int y2, int width, int height)
 {
+	ENTER();
 	unsigned long cmd = GDC_TYPE_BLTCOPYP << 24; 
 
 	if (x1 >= x2 && y1 >= y2)
@@ -903,33 +947,41 @@ MB86290SubsequentScreenToScreenCopy(ScrnInfoPtr pScrn, int x1, int y1, int x2, i
 	else
 		cmd |= GDC_CMD_BLTCOPY_BOTTOM_RIGHT << 16;
 	MB86290WriteFifo(4, cmd, (y1 << 16) | x1, (y2 << 16) | x2, (height << 16) | width);
+	LEAVE();
 }
 
 static void
 MB86290SetupForSolidFill(ScrnInfoPtr pScrn, int color, int rop, unsigned int planemask)
 {
+	ENTER();
 	MB86290WriteFifo(2, (GDC_TYPE_SETCOLORREGISTER << 24) | (GDC_CMD_BODY_FORE_COLOR << 16),
 			 color);
+	LEAVE();
 }
 
 static void
 MB86290SubsequentSolidFillRect(ScrnInfoPtr pScrn, int x, int y, int w, int h)
 {
+	ENTER();
 	MB86290WriteFifo(3, (GDC_TYPE_DRAWRECTP << 24) | (GDC_CMD_BLT_FILL << 16),
 			 (y << 16) | x,
 			 (h << 16) | w);
+	LEAVE();
 }
 
 static void
 MB86290SetupForSolidLine(ScrnInfoPtr pScrn, int color, int rop, unsigned int planemask)
 {
+	ENTER();
 	MB86290WriteFifo(4, (GDC_TYPE_SETCOLORREGISTER << 24) | (GDC_CMD_BODY_FORE_COLOR << 16), color,
 			 (GDC_TYPE_SETMODEREGISTER << 24) | (GDC_CMD_MDR1 << 16), (2 << 7) | (rop << 9));
+	LEAVE();
 }
 
 static void
 MB86290SubsequentSolidTwoPointLine(ScrnInfoPtr pScrn, int x1, int y1, int x2, int y2, int flags)
 {
+	ENTER();
 	long cmd2 = (GDC_TYPE_DRAWLINE2I << 24) | 1;
 
 	if (flags & OMIT_LAST)					
@@ -939,43 +991,52 @@ MB86290SubsequentSolidTwoPointLine(ScrnInfoPtr pScrn, int x1, int y1, int x2, in
 
 	MB86290WriteFifo(6, GDC_TYPE_DRAWLINE2I << 24, x1 << 16, y1 << 16,
 			 cmd2, x2 << 16, y2 << 16);
+	LEAVE();
 }
 #ifdef DASH_LINES
 static void
 MB86290SetupForDashedLine(ScrnInfoPtr pScrn, int fg, int bg, int rop, unsigned int planemask, 
 				int length, unsigned char *pattern)
 {
+	ENTER();
         xf86DrvMsg(pScrn->scrnIndex, X_NOTICE, "MB86290SetupForDashedLine\n");
 	MB86290WriteFifo(6, (GDC_TYPE_SETCOLORREGISTER << 24) | (GDC_CMD_BODY_FORE_COLOR << 16), fg,
 			 (GDC_TYPE_SETCOLORREGISTER << 24) | (GDC_CMD_BODY_BACK_COLOR << 16), bg,
 			 (GDC_TYPE_SETMODEREGISTER << 24) | (GDC_CMD_MDR1 << 16), (2 << 7) | (rop << 9) | (1 << 19));
 	MB86290WriteDrawReg(GDC_REG_LINE_PATTERN, *(long*)pattern);
+	LEAVE();
 }
 
 static void
 MB86290SubsequentDashedTwoPointLine(ScrnInfoPtr pScrn, int x1, int y1, int x2, int y2, int flags, int phase)
 {
+	ENTER();
         xf86DrvMsg(pScrn->scrnIndex, X_NOTICE, "MB86290SubsequentDashedTwoPointLine\n");
 	MB86290WriteDrawReg(GDC_REG_LINE_PATTERN_OFFSET, phase);
 	MB86290SubsequentSolidTwoPointLine(pScrn, x1, y1, x2, y2, flags);
+	LEAVE();
 }
 #endif
 static void
 MB86290SetClippingRectangle(ScrnInfoPtr pScrn, int left, int top, int right, int bottom)
 {
+	ENTER();
 	MB86290WriteDrawReg(GDC_REG_CLIP_XMIN, left);
 	MB86290WriteDrawReg(GDC_REG_CLIP_XMAX, right);
 	MB86290WriteDrawReg(GDC_REG_CLIP_YMIN, top);
 	MB86290WriteDrawReg(GDC_REG_CLIP_YMAX, bottom);
 	MB86290WriteDrawReg(GDC_REG_MODE_MISC,
 		       MB86290ReadDrawReg(GDC_REG_MODE_MISC) | (3 << 8)); /* Enable clipping */
+	LEAVE();
 }
 
 static void
 MB86290DisableClipping(ScrnInfoPtr pScrn)
 {
+	ENTER();
 	MB86290WriteDrawReg(GDC_REG_MODE_MISC,
 		       MB86290ReadDrawReg(GDC_REG_MODE_MISC) & ~(3 << 8)); /* Disable clipping */
+	LEAVE();
 }
 
 unsigned long p[8];
@@ -986,6 +1047,7 @@ MB86290SetupForMono8x8PatternFill(ScrnInfoPtr pScrn,
 				  int fg, int bg, int rop,
 				  unsigned int planemask)
 {
+	ENTER();
 	int i;
 	long mdr4 = rop << 9;
 	unsigned long* p = MB86290PTR(pScrn)->bmp;
@@ -1007,6 +1069,7 @@ MB86290SetupForMono8x8PatternFill(ScrnInfoPtr pScrn,
 	}
 	MB86290WriteFifo(2, (GDC_TYPE_SETCOLORREGISTER << 24) | (GDC_CMD_BODY_BACK_COLOR << 16), bg);
 	MB86290WriteDrawReg(GDC_REG_MODE_BITMAP, mdr4);
+	LEAVE();
 }
 
 static void 
@@ -1014,6 +1077,7 @@ MB86290SubsequentMono8x8PatternFillRect(ScrnInfoPtr pScrn,
 					int patternx, int patterny,
 					int x, int y, int w, int h)
 {
+	ENTER();
 	int i, j, k;
 	unsigned long* p = MB86290PTR(pScrn)->bmp;
 
@@ -1028,6 +1092,7 @@ MB86290SubsequentMono8x8PatternFillRect(ScrnInfoPtr pScrn,
 						 p[0], p[1], p[2], p[3], p[4], p[5], p[6], p[7]);
 		}
 	}
+	LEAVE();
 }
 
 static void 
@@ -1036,6 +1101,7 @@ MB86290SetupForScanlineCPUToScreenColorExpandFill(ScrnInfoPtr pScrn,
 						  int rop,
 						  unsigned int planemask)
 {
+	ENTER();
 	long mdr4 = rop << 9;
 
 	MB86290WriteFifo(2, (GDC_TYPE_SETCOLORREGISTER << 24) | (GDC_CMD_BODY_FORE_COLOR << 16), fg);
@@ -1047,6 +1113,7 @@ MB86290SetupForScanlineCPUToScreenColorExpandFill(ScrnInfoPtr pScrn,
 	}
 	MB86290WriteFifo(2, (GDC_TYPE_SETCOLORREGISTER << 24) | (GDC_CMD_BODY_BACK_COLOR << 16), bg);
 	MB86290WriteDrawReg(GDC_REG_MODE_BITMAP, mdr4);
+	LEAVE();
 }
 
 static void 
@@ -1054,9 +1121,11 @@ MB86290SubsequentScanlineCPUToScreenColorExpandFill(ScrnInfoPtr pScrn,
 						    int x, int y, int w, int h,
 						    int skipleft )
 {
+	ENTER();
 	MB86290PTR(pScrn)->left = x;
 	MB86290PTR(pScrn)->cury = y;
 	MB86290PTR(pScrn)->width = w;
+	LEAVE();
 }
 
 static void 
@@ -1064,6 +1133,7 @@ MB86290SubsequentColorExpandScanline(ScrnInfoPtr pScrn, int bufno)
 {
 	int i;
 	int width = MB86290PTR(pScrn)->width;
+	ENTER();
 
 	for (i = 0; i < width; i += 32) {
 		long bmp = xaaScanLineBuf[i/8+3] | (xaaScanLineBuf[i/8+2] << 8) |
@@ -1074,6 +1144,11 @@ MB86290SubsequentColorExpandScanline(ScrnInfoPtr pScrn, int bufno)
 				 bmp);
 	}
 	MB86290PTR(pScrn)->cury++;
+	LEAVE();
 }
+
+#ifdef MB86290_DEBUG
+int mb86290_indent;
+#endif
 
 
