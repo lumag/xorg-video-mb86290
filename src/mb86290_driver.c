@@ -37,8 +37,10 @@
 #include "colormapst.h"
 #include "xf86cmap.h"
 #include "fb.h"
+#ifndef XSERVER_LIBPCIACCESS
 #include "xf86Resources.h"
 #include "xf86RAC.h"
+#endif
 #include "fbdevhw.h"
 #include "xaa.h"
 #include "xf86i2c.h"
@@ -524,10 +526,12 @@ MB86290PreInit(ScrnInfoPtr pScrn, int flags)
 	
 	fPtr->PciInfo = xf86GetPciInfoForEntity(fPtr->pEnt->index);
 
+#ifndef XSERVER_LIBPCIACCESS
 	if (xf86RegisterResources(fPtr->pEnt->index, NULL, ResExclusive))
 		goto fail;
 
 	pScrn->racMemFlags = RAC_FB | RAC_COLORMAP | RAC_CURSOR;
+#endif
 	pScrn->monitor = pScrn->confScreen->monitor;
 
 	/* Open framebuffer device */
