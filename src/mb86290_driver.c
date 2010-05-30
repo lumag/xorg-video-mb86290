@@ -176,59 +176,6 @@ static const OptionInfoRec MB86290Options[] = {
 
 /* -------------------------------------------------------------------- */
 
-static const char *mb86290_fbSymbols[] = {
-	"fbScreenInit",
-	"fbPictureInit",
-	NULL
-};
-
-static const char *fbdevHWSymbols[] = {
-	"fbdevHWInit",
-	"fbdevHWProbe",
-	"fbdevHWSetVideoModes",
-	"fbdevHWUseBuildinMode",
-	"fbdevHWGetDepth",
-	"fbdevHWGetLineLength",
-	"fbdevHWGetName",
-	"fbdevHWGetType",
-	"fbdevHWGetVidmem",
-	"fbdevHWLinearOffset",
-	"fbdevHWLoadPalette",
-	"fbdevHWMapVidmem",
-	"fbdevHWUnmapVidmem",
-	"fbdevHWLoadpalette",
-	"fbdevHWAdjustFrame",
-	"fbdevHWEnterVT",
-	"fbdevHWLeaveVT",
-	"fbdevHWModeInit",
-	"fbdevHWRestore",
-	"fbdevHWSwitchMode",
-	"fbdevHWValidMode",
-	"fbdevHWDPMSSet",
-	NULL
-};
-
-static const char *xaaSymbols[] = {
-	"XAACreateInfoRec",
-	"XAADestroyInfoRec",
-	"XAAInit",
-	NULL
-};
-
-static const char *i2cSymbols[] =
-{
-	"xf86CreateI2CBusRec",
-	"xf86CreateI2CDevRec",
-	"xf86DestroyI2CBusRec",
-	"xf86DestroyI2CDevRec",
-	"xf86I2CBusInit",
-	"xf86I2CDevInit",
-	"xf86I2CWriteByte",
-	NULL
-};
-
-/* -------------------------------------------------------------------- */
-
 #ifdef XFree86LOADER
 
 static XF86ModuleVersionInfo MB86290VersRec =
@@ -346,7 +293,6 @@ MB86290Setup(pointer module, pointer opts, int *errmaj, int *errmin)
 	if (!setupDone) {
 		setupDone = TRUE;
 		xf86AddDriver(&MB86290, module, 0);
-		LoaderRefSymLists(mb86290_fbSymbols, xaaSymbols, i2cSymbols, NULL);
 		LEAVE((pointer)1);
 	} else {
 		if (errmaj) *errmaj = LDR_ONCEONLY;
@@ -467,7 +413,6 @@ MB86290Probe(DriverPtr drv, int flags)
 	
 	if (!xf86LoadDrvSubModule(drv, "fbdevhw"))
 		LEAVE(FALSE);
-	xf86LoaderReqSymLists(fbdevHWSymbols, NULL);
 
 	if ((numUsed = xf86MatchPciInstances(MB86290_NAME, 
 			PCI_VENDOR_FUJITSU,
@@ -604,20 +549,17 @@ MB86290PreInit(ScrnInfoPtr pScrn, int flags)
 	if (!xf86LoadSubModule(pScrn, "fb"))
 #endif
 		goto fail;
-	xf86LoaderReqSymLists(mb86290_fbSymbols, NULL);
 
 	/* Load XAA if needed */
 	if (!xf86ReturnOptValBool(fPtr->Options, OPTION_NOACCEL, FALSE)) {
 		if (!xf86LoadSubModule(pScrn, "xaa")) {
 			goto fail;
 		}
-		xf86LoaderReqSymLists(xaaSymbols, NULL);
 	}
 
 	if (!xf86ReturnOptValBool(fPtr->Options, OPTION_NOVIDEO, FALSE)) {
 		if (!xf86LoadSubModule(pScrn, "i2c"))
 			goto fail;
-		xf86LoaderReqSymLists(i2cSymbols, NULL);
 		MB86290I2CInit(pScrn);
 	}
 
