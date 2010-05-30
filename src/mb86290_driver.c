@@ -29,6 +29,7 @@
 #include "gdcdef.h"
 #include "gdcreg.h"
 
+#include "xorg-server.h"
 #include "xf86.h"
 #include "xf86_OSproc.h"
 #include "mipointer.h"
@@ -136,7 +137,7 @@ static const struct pci_id_match mb86290_device_match[] = {
 };
 #endif
 
-DriverRec MB86290 = {
+_X_EXPORT DriverRec MB86290 = {
 	MB86290_DRIVER_VERSION,
 	MB86290_DRIVER_NAME,
 	MB86290Identify,
@@ -300,7 +301,7 @@ MB86290Setup(pointer module, pointer opts, int *errmaj, int *errmin)
 	}
 }
 
-XF86ModuleData mb86290ModuleData = { &MB86290VersRec, MB86290Setup, NULL };
+_X_EXPORT XF86ModuleData mb86290ModuleData = { &MB86290VersRec, MB86290Setup, NULL };
 
 MODULESETUPPROTO(MB86290Setup);
 
